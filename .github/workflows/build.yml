@@ -10,6 +10,8 @@ on:
       - "go.mod"
       - "go.sum"
       - ".github/workflows/build.yml"
+    tags:
+      - "v*"
   pull_request:
     branches: [master]
     paths:
@@ -39,3 +41,26 @@ jobs:
           GOOS: linux
           GOARCH: ${{ matrix.goarch }}
         run: go build -o jumpkwapp-linux-${{ matrix.goarch }} ./jumpkwapp.go
+
+      - name: Upload binary as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jumpkwapp-linux-${{ matrix.goarch }}
+          path: jumpkwapp-linux-${{ matrix.goarch }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            jumpkwapp-linux-amd64/jumpkwapp-linux-amd64
+            jumpkwapp-linux-arm64/jumpkwapp-linux-arm64
